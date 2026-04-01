@@ -5,9 +5,10 @@ import { sendSupplierEmail } from '@/lib/email';
 import Stripe from 'stripe';
 
 // Must disable body parsing for Stripe signature verification
-export const config = {
-  api: { bodyParser: false },
-};
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const preferredRegion = 'iad1';
+
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
