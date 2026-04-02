@@ -8,6 +8,8 @@ export interface Product {
   cost: number;
   url: string;
   tags: string;
+  image: string;        // NEW
+  description: string;  // NEW
 }
 
 function getAuth() {
@@ -32,20 +34,18 @@ function getAuth() {
 export async function searchProducts(query: string): Promise<Product[]> {
   const auth = getAuth();
 
-  // Use the GoogleAuth instance directly (not the client)
-const sheets = google.sheets({
-  version: 'v4',
-  auth,
-});
+  const sheets = google.sheets({
+    version: 'v4',
+    auth,
+  });
 
-const spreadsheetId = process.env.GOOGLE_SHEET_ID;
-if (!spreadsheetId) throw new Error('GOOGLE_SHEET_ID not set');
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+  if (!spreadsheetId) throw new Error('GOOGLE_SHEET_ID not set');
 
-const response = await sheets.spreadsheets.values.get({
-  spreadsheetId,
-  range: 'products!A:G',
-});
-
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: 'products!A:I',
+  });
 
   const rows = response.data.values ?? [];
   if (rows.length < 2) return [];
@@ -56,13 +56,30 @@ const response = await sheets.spreadsheets.values.get({
   const products: Product[] = [];
 
   for (const row of dataRows) {
-    const [product_name, sku, supplier, price, cost, url, tags] = row;
+    const [
+      product_name,
+      sku,
+      supplier,
+      price,
+      cost,
+      url,
+      tags,
+      image,
+      description
+    ] = row;
+
     if (!sku) continue;
 
-    const normalTags = (tags ?? '').toLowerCase();
-    const normalName = (product_name ?? '').toLowerCase();
+    const normalName = (product_name ?? '').toLowerCase().trim();
+    const normalTags = (tags ?? '').toLowerCase().trim();
+    const normalSku = (sku ?? '').toLowerCase().trim();
 
-    if (normalTags.includes(normalQuery) || normalName.includes(normalQuery)) {
+    const matches =
+      normalName.includes(normalQuery) ||
+      normalTags.includes(normalQuery) ||
+      normalSku.includes(normalQuery);
+
+    if (matches) {
       products.push({
         product_name: product_name ?? '',
         sku: sku ?? '',
@@ -71,10 +88,11 @@ const response = await sheets.spreadsheets.values.get({
         cost: parseFloat(cost) || 0,
         url: url ?? '',
         tags: tags ?? '',
+        image: image ?? '',
+        description: description ?? '',
       });
     }
   }
 
   return products;
 }
-
