@@ -11,6 +11,8 @@ type Product = {
   cost: number;
   url: string;
   tags: string;
+  image: string;  //NEW
+  description: string;  //NEW
 };
 
 type Screen = 'search' | 'results' | 'qr' | 'confirmation';
@@ -255,26 +257,46 @@ function ResultsScreen({
                   style={{ animationDelay: `${i * 60}ms` }}
                 >
                   <div className="flex items-start gap-4">
-                    {/* Icon placeholder */}
-                    <div className="w-14 h-14 rounded-xl bg-surface-2 flex-shrink-0 flex items-center justify-center">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <rect x="3" y="6" width="18" height="14" rx="2" stroke="#7a9488" strokeWidth="1.5"/>
-                        <path d="M8 6V5a4 4 0 018 0v1" stroke="#7a9488" strokeWidth="1.5" strokeLinecap="round"/>
-                      </svg>
-                    </div>
+                    {/* Product image */}
+<div className="w-14 h-14 rounded-xl overflow-hidden bg-surface-2 flex-shrink-0">
+  {product.image ? (
+    <img
+      src={product.image}
+      alt={product.product_name}
+      className="w-full h-full object-cover"
+    />
+  ) : (
+    <div className="w-full h-full flex items-center justify-center text-ink-muted text-xs">
+      No image
+    </div>
+  )}
+</div>
+
 
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h3 className="font-semibold text-ink-primary leading-tight">
-                            {product.product_name}
-                          </h3>
-                          <p className="text-ink-muted text-xs font-mono mt-0.5">{product.sku}</p>
-                        </div>
-                        <span className="text-brand-600 font-bold text-lg whitespace-nowrap">
-                          {formatPrice(product.price)}
-                        </span>
-                      </div>
+  <div className="flex items-start justify-between gap-2">
+    <div>
+      <h3 className="font-semibold text-ink-primary leading-tight">
+        {product.product_name}
+      </h3>
+
+      <p className="text-ink-muted text-xs font-mono mt-0.5">
+        {product.sku}
+      </p>
+
+      {/* 🔥 Add description here */}
+      {product.description && (
+        <p className="text-ink-muted text-xs mt-2 line-clamp-2">
+          {product.description}
+        </p>
+      )}
+    </div>
+
+    <span className="text-brand-600 font-bold text-lg whitespace-nowrap">
+      {formatPrice(product.price)}
+    </span>
+  </div>
+
 
                       <div className="flex items-center gap-2 mt-3">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${supplierColor(product.supplier)}`}>
@@ -433,9 +455,33 @@ export default function Home() {
     setScreen('results');
   }
 
-  function handleSelect(product: Product & { _checkoutData?: { checkout_url: string; qr_code: string; session_id: string } }) {
+  function handleSelect(
+    product: Product & {
+      _checkoutData?: { checkout_url: string; qr_code: string; session_id: string };
+    }
+  ) {
     const cd = product._checkoutData;
     if (!cd) return;
+
+    // 🔥 NEW: Store everything the checkout page needs
+    sessionStorage.setItem(
+      "revytal-product",
+      JSON.stringify({
+        sku: product.sku,
+        product_name: product.product_name,
+        price: product.price,
+        url: product.url,
+        supplier: product.supplier,
+        tags: product.tags,
+        image: product.image,             // NEW
+        description: product.description, // NEW
+        checkout_url: cd.checkout_url,
+        qr_code: cd.qr_code,
+        session_id: cd.session_id,
+      })
+    );
+
+    // Existing state updates
     setSelectedProduct(product);
     setCheckoutData({ checkout_url: cd.checkout_url, qr_code: cd.qr_code });
     setScreen('qr');
@@ -473,3 +519,4 @@ export default function Home() {
     </>
   );
 }
+
